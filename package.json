@@ -1,0 +1,25 @@
+{
+  "name": "blog-application",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node api/index.js",
+    "dev": "nodemon api/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Aman-016/Blog-Application.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Aman-016/Blog-Application/issues"
+  },
+  "homepage": "https://github.com/Aman-016/Blog-Application#readme",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
