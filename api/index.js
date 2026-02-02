@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import userRoutes from "./routes/user.route.js";
 import authRoutes from "./routes/auth.route.js";
 import cookieParser from "cookie-parser";
+import postRoutes from './routes/post.route.js'
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ app.use(cookieParser());
 // ✅ Routes
 app.use("/api/user", userRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/post", postRoutes);
 
 // ✅ Global error handler (LAST middleware)
 app.use((err, req, res, next) => {
