@@ -1,4 +1,5 @@
 import flowbite from "flowbite/plugin";
+import tailwindScrollbar from 'tailwind-scrollbar';
 
 export default {
   content: [
@@ -9,5 +10,5 @@ export default {
   theme: {
     extend: {},
   },
-  plugins: [flowbite],
+  plugins: [flowbite, tailwindScrollbar],
 };
