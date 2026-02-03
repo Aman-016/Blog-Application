@@ -1,5 +1,5 @@
-import User from "../models/user.model.js";
-import bcryptjs from "bcryptjs";
+import User from '../models/user.model.js';
+import bcryptjs from 'bcryptjs';
 import { errorHandler } from '../utils/error.js';
 import jwt from 'jsonwebtoken';
 
@@ -32,7 +32,6 @@ export const signup = async (req, res, next) => {
     next(error);
   }
 };
-
 
 export const signin = async (req, res, next) => {
   const { email, password } = req.body;
@@ -74,7 +73,6 @@ export const signin = async (req, res, next) => {
   }
 };
 
-
 export const google = async (req, res, next) => {
   const { email, name, googlePhotoUrl } = req.body;
   try {
@@ -90,7 +88,7 @@ export const google = async (req, res, next) => {
       const cookieOptions = {
         httpOnly: true,
       };
-  
+
       // In production, set sameSite and secure for cross-site cookies
       if (process.env.NODE_ENV === 'production') {
         cookieOptions.sameSite = 'none';
@@ -135,5 +133,3 @@ export const google = async (req, res, next) => {
     next(error);
   }
 };
-
-

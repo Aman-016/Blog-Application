@@ -1,39 +1,24 @@
-
-
 import Post from '../models/post.model.js';
 import { errorHandler } from '../utils/error.js';
 
-export const createPost = async (req, res, next) => {
+export const create = async (req, res, next) => {
+  if (!req.user.isAdmin) {
+    return next(errorHandler(403, 'You are not allowed to create a post'));
+  }
+  if (!req.body.title || !req.body.content) {
+    return next(errorHandler(400, 'Please provide all required fields'));
+  }
+  const slug = req.body.title
+    .split(' ')
+    .join('-')
+    .toLowerCase()
+    .replace(/[^a-zA-Z0-9-]/g, '');
+  const newPost = new Post({
+    ...req.body,
+    slug,
+    userId: req.user.id,
+  });
   try {
-    // ✅ Only admin can create post
-    if (!req.user.isAdmin) {
-      return next(errorHandler(403, 'You are not allowed to create a post'));
-    }
-
-    const { title, content } = req.body;
-
-    // ✅ Required fields check
-    if (!title || !content) {
-      return next(errorHandler(400, 'Please provide all required fields'));
-    }
-
-    // ✅ Create unique slug
-    const slug =
-      title
-        .split(' ')
-        .join('-')
-        .toLowerCase()
-        .replace(/[^a-z0-9-]/g, '') +
-      '-' +
-      Date.now();
-
-    // ✅ Create post
-    const newPost = new Post({
-      ...req.body,
-      slug,
-      userId: req.user.id,
-    });
-
     const savedPost = await newPost.save();
     res.status(201).json(savedPost);
   } catch (error) {
@@ -41,10 +26,7 @@ export const createPost = async (req, res, next) => {
   }
 };
 
-
-
-
-export const getPosts = async (req, res, next) => {
+export const getposts = async (req, res, next) => {
   try {
     const startIndex = parseInt(req.query.startIndex) || 0;
     const limit = parseInt(req.query.limit) || 9;
@@ -100,7 +82,6 @@ export const deletepost = async (req, res, next) => {
     next(error);
   }
 };
-
 
 export const updatepost = async (req, res, next) => {
   if (!req.user.isAdmin || req.user.id !== req.params.userId) {
