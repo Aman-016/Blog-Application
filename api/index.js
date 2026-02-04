@@ -40,6 +40,8 @@ app.use((req, res) => {
   res.sendFile(path.join(__dirname, "client", "dist", "index.html"));
 });
 
+
+
 /* ✅ Error handler */
 app.use((err, req, res, next) => {
   res.status(err.statusCode || 500).json({
