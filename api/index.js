@@ -19,10 +19,10 @@ const __dirname = path.resolve();
 app.use(express.json());
 app.use(cookieParser());
 
-/* ✅ CORS */
+/* ✅ CORS (Render Safe) */
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: true,
     credentials: true,
   })
 );
@@ -50,12 +50,14 @@ app.use((err, req, res, next) => {
 });
 
 /* ✅ DB + Server */
+const PORT = process.env.PORT || 3000;
+
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("Connected to MongoDB");
-    app.listen(3000, () => {
-      console.log("API server running on port 3000");
+    app.listen(PORT, () => {
+      console.log(`API server running on port ${PORT}`);
     });
   })
   .catch((err) => console.log(err));
