@@ -23,12 +23,12 @@ export default function Home() {
           Welcome to my Blog
         </h1>
         <p className='text-gray-500 text-xs sm:text-sm'>
-          Welcome to my blog! Here you'll find a wide range of articles,
-          tutorials, and resources designed to help you grow as a developer.
-          Whether you're interested in web development, software engineering,
-          programming languages, or best practices in the tech industry, there's
-          something here for everyone. Dive in and explore the content to expand
-          your knowledge and skills.
+        I’m glad you’re here. This space is created to share knowledge, experiences,
+         and ideas around technology, learning, and personal growth. Here, you’ll find simple explanations,
+          project insights, coding tips, and helpful resources for students and beginners.
+           My goal is to make complex topics easy to understand and practical to use in real life.
+            Whether you’re exploring programming, working on projects, or improving your skills, this blog is for you. 
+            Stay curious, keep learning, and feel free to explore every post. Thank you for visiting — I hope you enjoy the journey with me!
         </p>
         <Link
           to='/search'
