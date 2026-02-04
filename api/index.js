@@ -1,7 +1,6 @@
 import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import cors from "cors";
 import cookieParser from "cookie-parser";
 import path from "path";
 
@@ -19,13 +18,19 @@ const __dirname = path.resolve();
 app.use(express.json());
 app.use(cookieParser());
 
-/* ✅ CORS (Render Safe) */
-app.use(
-  cors({
-    origin: true,
-    credentials: true,
-  })
-);
+/* ✅ HARD CORS FIX FOR RENDER */
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "https://blog-application-1-ih88.onrender.com");
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+
+  next();
+});
 
 /* ✅ Routes */
 app.use("/api/user", userRoutes);
@@ -39,8 +44,6 @@ app.use(express.static(path.join(__dirname, "client/dist")));
 app.use((req, res) => {
   res.sendFile(path.join(__dirname, "client", "dist", "index.html"));
 });
-
-
 
 /* ✅ Error handler */
 app.use((err, req, res, next) => {
