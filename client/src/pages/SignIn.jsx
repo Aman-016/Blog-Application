@@ -1,4 +1,3 @@
-
 import { Alert, Button, Label, Spinner, TextInput } from 'flowbite-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -59,7 +58,7 @@ export default function SignIn() {
             Blog
           </Link>
           <p className='text-sm mt-5'>
-             You can sign in with your email and password
+            You can sign in with your email and password
             or with Google.
           </p>
         </div>

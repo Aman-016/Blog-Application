@@ -10,90 +10,97 @@ export default function Search() {
     category: 'uncategorized',
   });
 
+  console.log(sidebarData);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showMore, setShowMore] = useState(false);
 
   const location = useLocation();
+
   const navigate = useNavigate();
 
-  // ✅ Read params safely from URL
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
-
-    const searchTermFromUrl = urlParams.get('searchTerm') || '';
-    const sortFromUrl = urlParams.get('sort') || 'desc';
-    const categoryFromUrl = urlParams.get('category') || 'uncategorized';
-
-    setSidebarData({
-      searchTerm: searchTermFromUrl,
-      sort: sortFromUrl,
-      category: categoryFromUrl,
-    });
+    const searchTermFromUrl = urlParams.get('searchTerm');
+    const sortFromUrl = urlParams.get('sort');
+    const categoryFromUrl = urlParams.get('category');
+    if (searchTermFromUrl || sortFromUrl || categoryFromUrl) {
+      setSidebarData({
+        ...sidebarData,
+        searchTerm: searchTermFromUrl,
+        sort: sortFromUrl,
+        category: categoryFromUrl,
+      });
+    }
 
     const fetchPosts = async () => {
-      try {
-        setLoading(true);
-        const searchQuery = urlParams.toString();
-
-        const res = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/api/post/getposts?${searchQuery}`
-        );
-
+      setLoading(true);
+      const searchQuery = urlParams.toString();
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/post/getposts?${searchQuery}`
+      );
+      if (!res.ok) {
+        setLoading(false);
+        return;
+      }
+      if (res.ok) {
         const data = await res.json();
-
-        if (!res.ok) {
-          setLoading(false);
-          return;
-        }
-
         setPosts(data.posts);
         setLoading(false);
-        setShowMore(data.posts.length === 9);
-      } catch (error) {
-        setLoading(false);
-        console.log(error.message);
+        if (data.posts.length === 9) {
+          setShowMore(true);
+        } else {
+          setShowMore(false);
+        }
       }
     };
-
     fetchPosts();
   }, [location.search]);
 
-  // ✅ Input change
   const handleChange = (e) => {
-    setSidebarData({
-      ...sidebarData,
-      [e.target.id]: e.target.value,
-    });
+    if (e.target.id === 'searchTerm') {
+      setSidebarData({ ...sidebarData, searchTerm: e.target.value });
+    }
+    if (e.target.id === 'sort') {
+      const order = e.target.value || 'desc';
+      setSidebarData({ ...sidebarData, sort: order });
+    }
+    if (e.target.id === 'category') {
+      const category = e.target.value || 'uncategorized';
+      setSidebarData({ ...sidebarData, category });
+    }
   };
 
-  // ✅ Submit filters
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    const urlParams = new URLSearchParams();
+    const urlParams = new URLSearchParams(location.search);
     urlParams.set('searchTerm', sidebarData.searchTerm);
     urlParams.set('sort', sidebarData.sort);
     urlParams.set('category', sidebarData.category);
-
-    navigate(`/search?${urlParams.toString()}`);
+    const searchQuery = urlParams.toString();
+    navigate(`/search?${searchQuery}`);
   };
 
-  // ✅ Pagination
   const handleShowMore = async () => {
-    const startIndex = posts.length;
+    const numberOfPosts = posts.length;
+    const startIndex = numberOfPosts;
     const urlParams = new URLSearchParams(location.search);
     urlParams.set('startIndex', startIndex);
-
+    const searchQuery = urlParams.toString();
     const res = await fetch(
-      `${import.meta.env.VITE_BACKEND_URL}/api/post/getposts?${urlParams.toString()}`
+      `${import.meta.env.VITE_BACKEND_URL}/api/post/getposts?${searchQuery}`
     );
-
-    const data = await res.json();
-
+    if (!res.ok) {
+      return;
+    }
     if (res.ok) {
+      const data = await res.json();
       setPosts([...posts, ...data.posts]);
-      setShowMore(data.posts.length === 9);
+      if (data.posts.length === 9) {
+        setShowMore(true);
+      } else {
+        setShowMore(false);
+      }
     }
   };
 
@@ -101,77 +108,59 @@ export default function Search() {
     <div className='flex flex-col md:flex-row'>
       <div className='p-7 border-b md:border-r md:min-h-screen border-gray-500'>
         <form className='flex flex-col gap-8' onSubmit={handleSubmit}>
-          <div className='flex items-center gap-2'>
-            <label className='font-semibold'>Search Term:</label>
+          <div className='flex   items-center gap-2'>
+            <label className='whitespace-nowrap font-semibold'>
+              Search Term:
+            </label>
             <TextInput
+              placeholder='Search...'
               id='searchTerm'
               type='text'
-              placeholder='Search...'
               value={sidebarData.searchTerm}
               onChange={handleChange}
             />
           </div>
-
           <div className='flex items-center gap-2'>
             <label className='font-semibold'>Sort:</label>
-            <Select id='sort' value={sidebarData.sort} onChange={handleChange}>
+            <Select onChange={handleChange} value={sidebarData.sort} id='sort'>
               <option value='desc'>Latest</option>
               <option value='asc'>Oldest</option>
             </Select>
           </div>
-
           <div className='flex items-center gap-2'>
             <label className='font-semibold'>Category:</label>
             <Select
-              id='category'
-              value={sidebarData.category}
               onChange={handleChange}
+              value={sidebarData.category}
+              id='category'
             >
-            <option value='uncategorized'>Select a category</option>
-<option value='news'>News</option>
-<option value='articles'>Articles</option>
-<option value='updates'>Updates</option>
-
-<option value='javascript'>JavaScript</option>
-<option value='reactjs'>React.js</option>
-<option value='nextjs'>Next.js</option>
-
-<option value='java'>Java</option>
-<option value='c'>C</option>
-<option value='cpp'>C++</option>
-
-<option value='html'>HTML</option>
-<option value='css'>CSS</option>
-
-
+              <option value='uncategorized'>Uncategorized</option>
+              <option value='reactjs'>React.js</option>
+              <option value='nextjs'>Next.js</option>
+              <option value='javascript'>JavaScript</option>
             </Select>
           </div>
-
           <Button type='submit' outline gradientDuoTone='purpleToPink'>
             Apply Filters
           </Button>
         </form>
       </div>
-
       <div className='w-full'>
-        <h1 className='text-3xl font-semibold border-b border-gray-500 p-3 mt-5'>
+        <h1 className='text-3xl font-semibold sm:border-b border-gray-500 p-3 mt-5 '>
           Posts results:
         </h1>
-
         <div className='p-7 flex flex-wrap gap-4'>
           {!loading && posts.length === 0 && (
             <p className='text-xl text-gray-500'>No posts found.</p>
           )}
-
           {loading && <p className='text-xl text-gray-500'>Loading...</p>}
-
           {!loading &&
+            posts &&
             posts.map((post) => <PostCard key={post._id} post={post} />)}
-
           {showMore && (
             <button
               onClick={handleShowMore}
-              className='text-teal-500 text-lg hover:underline w-full'
+              className='text-teal-500 text-lg hover:underline p-7 w-full'
             >
               Show More
             </button>

@@ -14,19 +14,15 @@ dotenv.config();
 
 const app = express();
 const __dirname = path.resolve();
-const PORT = process.env.PORT || 3000;
 
 /* ✅ Middlewares */
 app.use(express.json());
 app.use(cookieParser());
 
-/* ✅ CORS (Render + local) */
+/* ✅ CORS */
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      process.env.FRONTEND_URL,
-    ],
+    origin: "http://localhost:5173",
     credentials: true,
   })
 );
@@ -58,8 +54,8 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("Connected to MongoDB");
-    app.listen(PORT, () => {
-      console.log(`API server running on port ${PORT}`);
+    app.listen(3000, () => {
+      console.log("API server running on port 3000");
     });
   })
   .catch((err) => console.log(err));
