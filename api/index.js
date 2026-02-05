@@ -1,122 +1,73 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import cors from 'cors';
 import dotenv from 'dotenv';
-import userRoutes from './src/routes/user.route.js';
-import authRoutes from './src/routes/auth.route.js';
-import postRoutes from './src/routes/post.route.js';
-import commentRoutes from './src/routes/comment.route.js';
 import cookieParser from 'cookie-parser';
+import cors from 'cors';
+import path from 'path';
 
-// Configure environment variables
-if (process.env.NODE_ENV !== 'production') {
-  dotenv.config();
-}
+import userRoutes from './routes/user.route.js';
+import authRoutes from './routes/auth.route.js';
+import postRoutes from './routes/post.route.js';
+import commentRoutes from './routes/comment.route.js';
+
+dotenv.config();
 
 const app = express();
+const __dirname = path.resolve();
 
-// CORS configuration - UPDATE THESE DOMAINS WHEN YOU DEPLOY
-app.use(
-  cors({
-    origin:
-      process.env.NODE_ENV === 'production'
-        ? [
-            'https://blog.100jsprojects.com',
-            'https://mern-blog-client-steel.vercel.app',
-            /\.vercel\.app$/,
-          ]
-        : ['http://localhost:5173', 'http://localhost:3000'],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-requested-with'],
-  })
-);
-let isConnected = false;
-const connectDB = async () => {
-  if (isConnected) return;
+/* ---------------- MIDDLEWARES ---------------- */
 
-  try {
-    await mongoose.connect(process.env.MONGO, {
-      serverSelectionTimeoutMS: 10000,
-      socketTimeoutMS: 45000,
-      maxPoolSize: 1,
-      minPoolSize: 0,
-    });
-    isConnected = true;
-    console.log('✅ Connected to MongoDB');
-  } catch (err) {
-    console.log('❌ MongoDB connection error:', err.message);
-    isConnected = false;
-    throw err;
-  }
-};
-
-// Middleware
 app.use(express.json());
 app.use(cookieParser());
 
-// Database middleware (only for endpoints that need DB)
-const connectMiddleware = async (req, res, next) => {
-  try {
-    await connectDB();
-    next();
-  } catch (error) {
-    res
-      .status(500)
-      .json({ success: false, message: 'Database connection failed' });
-  }
-};
+/* ✅ CORS (works locally + Render) */
+app.use(
+  cors({
+    origin: [
+      'http://localhost:5173',
+      'https://blog-application-1-ih88.onrender.com',
+    ],
+    credentials: true,
+  })
+);
 
-// Test endpoints
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'API is working!', timestamp: new Date() });
+/* ---------------- API ROUTES ---------------- */
+
+app.use('/api/user', userRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/post', postRoutes);
+app.use('/api/comment', commentRoutes);
+
+/* ---------------- FRONTEND SERVE ---------------- */
+
+app.use(express.static(path.join(__dirname, 'client/dist')));
+
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(__dirname, 'client', 'dist', 'index.html'));
 });
 
-// Debug endpoints (helpful for deployment testing)
-app.get('/api/debug', (req, res) => {
-  res.json({
-    message: 'Debug info',
-    nodeEnv: process.env.NODE_ENV,
-    hasMongoEnv: !!process.env.MONGO,
-    hasJwtSecret: !!process.env.JWT_SECRET,
-    timestamp: new Date(),
-  });
-});
+/* ---------------- ERROR HANDLER ---------------- */
 
-app.get('/api/debug-db', async (req, res) => {
-  try {
-    await connectDB();
-    res.json({
-      message: 'Database connection successful!',
-      connected: true,
-      timestamp: new Date(),
-    });
-  } catch (error) {
-    res.json({
-      message: 'Database connection failed',
-      connected: false,
-      error: error.message,
-      timestamp: new Date(),
-    });
-  }
-});
-
-// Routes
-app.use('/api/user', connectMiddleware, userRoutes);
-app.use('/api/auth', connectMiddleware, authRoutes);
-app.use('/api/post', connectMiddleware, postRoutes);
-app.use('/api/comment', connectMiddleware, commentRoutes);
-
-// Error handling
 app.use((err, req, res, next) => {
-  const statusCode = err.statusCode || 500;
-  const message = err.message || 'Internal Server Error';
-  return res.status(statusCode).json({
+  res.status(err.statusCode || 500).json({
     success: false,
-    message,
-    statusCode,
+    statusCode: err.statusCode || 500,
+    message: err.message || 'Internal Server Error',
   });
 });
 
-// Export for Vercel
-export default app;
+/* ---------------- DB + SERVER ---------------- */
+
+const PORT = process.env.PORT || 3000;
+
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log('✅ MongoDB connected');
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.log('❌ Mongo error:', err.message);
+  });
