@@ -1,68 +1,122 @@
-import express from "express";
-import mongoose from "mongoose";
-import dotenv from "dotenv";
-import cookieParser from "cookie-parser";
-import path from "path";
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import userRoutes from './src/routes/user.route.js';
+import authRoutes from './src/routes/auth.route.js';
+import postRoutes from './src/routes/post.route.js';
+import commentRoutes from './src/routes/comment.route.js';
+import cookieParser from 'cookie-parser';
 
-import userRoutes from "./routes/user.route.js";
-import authRoutes from "./routes/auth.route.js";
-import postRoutes from "./routes/post.route.js";
-import commentRoutes from "./routes/comment.route.js";
-
-dotenv.config();
+// Configure environment variables
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config();
+}
 
 const app = express();
-const __dirname = path.resolve();
 
-/* ✅ Middlewares */
+// CORS configuration - UPDATE THESE DOMAINS WHEN YOU DEPLOY
+app.use(
+  cors({
+    origin:
+      process.env.NODE_ENV === 'production'
+        ? [
+            'https://blog.100jsprojects.com',
+            'https://mern-blog-client-steel.vercel.app',
+            /\.vercel\.app$/,
+          ]
+        : ['http://localhost:5173', 'http://localhost:3000'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-requested-with'],
+  })
+);
+let isConnected = false;
+const connectDB = async () => {
+  if (isConnected) return;
+
+  try {
+    await mongoose.connect(process.env.MONGO, {
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+      maxPoolSize: 1,
+      minPoolSize: 0,
+    });
+    isConnected = true;
+    console.log('✅ Connected to MongoDB');
+  } catch (err) {
+    console.log('❌ MongoDB connection error:', err.message);
+    isConnected = false;
+    throw err;
+  }
+};
+
+// Middleware
 app.use(express.json());
 app.use(cookieParser());
 
-/* ✅ HARD CORS FIX FOR RENDER */
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "https://blog-application-1-ih88.onrender.com");
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
+// Database middleware (only for endpoints that need DB)
+const connectMiddleware = async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    res
+      .status(500)
+      .json({ success: false, message: 'Database connection failed' });
   }
+};
 
-  next();
+// Test endpoints
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'API is working!', timestamp: new Date() });
 });
 
-/* ✅ Routes */
-app.use("/api/user", userRoutes);
-app.use("/api/auth", authRoutes);
-app.use("/api/post", postRoutes);
-app.use("/api/comment", commentRoutes);
-
-/* ✅ Serve frontend */
-app.use(express.static(path.join(__dirname, "client/dist")));
-
-app.use((req, res) => {
-  res.sendFile(path.join(__dirname, "client", "dist", "index.html"));
-});
-
-/* ✅ Error handler */
-app.use((err, req, res, next) => {
-  res.status(err.statusCode || 500).json({
-    success: false,
-    statusCode: err.statusCode || 500,
-    message: err.message || "Internal Server Error",
+// Debug endpoints (helpful for deployment testing)
+app.get('/api/debug', (req, res) => {
+  res.json({
+    message: 'Debug info',
+    nodeEnv: process.env.NODE_ENV,
+    hasMongoEnv: !!process.env.MONGO,
+    hasJwtSecret: !!process.env.JWT_SECRET,
+    timestamp: new Date(),
   });
 });
 
-/* ✅ DB + Server */
-const PORT = process.env.PORT || 3000;
-
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("Connected to MongoDB");
-    app.listen(PORT, () => {
-      console.log(`API server running on port ${PORT}`);
+app.get('/api/debug-db', async (req, res) => {
+  try {
+    await connectDB();
+    res.json({
+      message: 'Database connection successful!',
+      connected: true,
+      timestamp: new Date(),
     });
-  })
-  .catch((err) => console.log(err));
+  } catch (error) {
+    res.json({
+      message: 'Database connection failed',
+      connected: false,
+      error: error.message,
+      timestamp: new Date(),
+    });
+  }
+});
+
+// Routes
+app.use('/api/user', connectMiddleware, userRoutes);
+app.use('/api/auth', connectMiddleware, authRoutes);
+app.use('/api/post', connectMiddleware, postRoutes);
+app.use('/api/comment', connectMiddleware, commentRoutes);
+
+// Error handling
+app.use((err, req, res, next) => {
+  const statusCode = err.statusCode || 500;
+  const message = err.message || 'Internal Server Error';
+  return res.status(statusCode).json({
+    success: false,
+    message,
+    statusCode,
+  });
+});
+
+// Export for Vercel
+export default app;
